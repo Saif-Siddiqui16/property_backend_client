@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -42,7 +42,7 @@ model User {
   leases            Lease[]            @relation("TenantLeases")
   receivedMessages  Message[]          @relation("ReceivedMessages")
   sentMessages      Message[]          @relation("SentMessages")
-  properties        Property[]         @relation("ownerproperties")
+  properties        PropertyOwner[]     @relation("ownerproperties_users")
   refreshTokens     RefreshToken[]
   refundAdjustments RefundAdjustment[]
   tickets           Ticket[]
@@ -119,12 +119,24 @@ model Property {
   street           String?
   documents        Document[]
   maintenanceTasks MaintenanceTask[]
-  owners           User[]            @relation("ownerproperties")
+  owners           PropertyOwner[]    @relation("ownerproperties_properties")
   company          Company?          @relation("CompanyProperties", fields: [companyId], references: [id])
   units            Unit[]
 
   @@index([companyId], map: "Property_companyId_fkey")
   @@map("property")
+}
+
+model PropertyOwner {
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  userId     Int
+  property   Property @relation("ownerproperties_properties", fields: [propertyId], references: [id])
+  user       User     @relation("ownerproperties_users", fields: [userId], references: [id])
+
+  @@index([propertyId], map: "PropertyOwner_propertyId_fkey")
+  @@index([userId], map: "PropertyOwner_userId_fkey")
+  @@map("property_owner")
 }
 
 model Unit {
